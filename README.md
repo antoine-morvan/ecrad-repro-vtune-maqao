@@ -14,12 +14,32 @@ Script to install toolchain & run ecRad using HPCW. It installs:
 
 This also checks HPCW out (to the proper version).
 
+Results are stored under `rundir/ecrad_log.$(date)/`
+
 :warning:
 
 * Requires ~40GB of space
 * Default settings runs the small case of ecRad 
 * Medium test case requires ~2GB of RAM per thread
 * Edit `TMP_DIR=${SCRIPT_DIR}/.tmp` to something that suits your machine
+
+## MAQAO
+
+Maqao can be enabled by :
+
+```bash
+# Disable vtune
+export ENABLE_VTUNE=false
+
+# enable MAQAO
+export ENABLE_MAQAO=false
+
+# Tell HPCW to use system (external) MAQAO
+# Add this to the build wrapper script arguments
+${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh \
+    [...] \
+    --cmake-flags="-DUSE_SYSTEM_maqao=ON"
+```
 
 ## Offline
 
