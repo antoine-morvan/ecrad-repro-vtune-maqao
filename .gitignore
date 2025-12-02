@@ -1,1 +1,5 @@
 .cache/
+cmake/
+oneapi/
+.tmp/
+rundir/
