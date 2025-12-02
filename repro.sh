@@ -30,6 +30,34 @@ mkdir -p ${TMP_DIR} ${CACHE_DIR}
 GNU_MIRROR=https://mirror.cyberbits.eu/gnu
 
 ##########################################################################################
+## Setup MAQAO
+##########################################################################################
+# or set PATH accordingly outside script and comment this section to use another maqaq
+MAQAO_PREFIX=${SCRIPT_DIR}/maqao
+
+MAQAO_URL=https://maqao.org/maqao_archive/maqao.x86_64.2025.1.0.tar.xz
+MAQAO_CHECKSUM=e28f4c3ad8f15aaf455b46d6c46f6451fa8aef51ffee134bb766f98570941c8c
+
+[ ! -f ${CACHE_DIR}/$(basename ${MAQAO_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MAQAO_URL}) -C - ${MAQAO_URL}
+if [ ! -x ${MAQAO_PREFIX}/bin/maqao ]; then
+    (
+        echo "${MAQAO_CHECKSUM} ${CACHE_DIR}/$(basename ${MAQAO_URL})" | sha256sum -c
+        export TMP_MAQAO=${TMP_DIR}/maqao
+        mkdir -p $TMP_MAQAO
+        cleanup() {
+            rm -rf ${TMP_MAQAO}
+        }
+        trap -- cleanup TERM INT QUIT EXIT HUP
+        [ ! -d ${TMP_MAQAO}/$(basename ${MAQAO_URL} .tar.xz) ] && tar xf ${CACHE_DIR}/$(basename ${MAQAO_URL}) -C ${TMP_MAQAO}
+        mkdir -p ${MAQAO_PREFIX}
+        mv ${TMP_MAQAO}/$(basename ${MAQAO_URL} .tar.xz)/* ${MAQAO_PREFIX}/
+    )
+else
+    echo "## -- Skip MAQAO"
+fi
+export PATH=${MAQAO_PREFIX}/bin:${PATH}
+
+##########################################################################################
 ## Setup Recent CMake
 ##########################################################################################
 CMAKE_PREFIX=${SCRIPT_DIR}/cmake
