@@ -106,9 +106,6 @@ MPFR_CHECKSUM="277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2"
 MPC_CHECKSUM="ab642492f5cf882b74aa0cb730cd410a81edcdbec895183ce930e706c1c759b8"
 GCC_CHECKSUM="f2dfac9c026c58b04251732aa459db614ae1017d32a18a296b1ae5af3dcad927"
 
-# if [ $(gcc -dumpfullversion -dumpversion | cut -d'.' -f1) -gt 12 ]; then
-if true; then
-
 [ ! -f ${CACHE_DIR}/$(basename ${GMP_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${GMP_URL}) -C - ${GMP_URL}
 [ ! -f ${CACHE_DIR}/$(basename ${MPC_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MPC_URL}) -C - ${MPC_URL}
 [ ! -f ${CACHE_DIR}/$(basename ${MPFR_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MPFR_URL}) -C - ${MPFR_URL}
@@ -297,8 +294,6 @@ cat >> $SPECSFILE_PATH << EOF
 
 EOF
 
-fi
-
 ##########################################################################################
 ## Setup OneAPI & VTune
 ##########################################################################################
@@ -342,15 +337,12 @@ if [ ! -x ${BINPATH}/icc ]; then
             --eula accept \
             --install-dir ${ONEAPI_PREFIX} \
              --ignore-errors
-    # see https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-10/gcc-name.html
-    # see https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-10/gxx-name.html
-# specify gcc 12.5.0 or lower
-# -gcc-name=${BASE_GCC_LOCATION}/prefix/bin/gcc
-# -gxx-name=${BASE_GCC_LOCATION}/prefix/bin/g++
-# -Wl,-rpath,${BASE_GCC_LOCATION}/prefix/lib
-
-        (grep 'diag-disable=10441' ${BINPATH}/icc.cfg &> /dev/null) || echo "-diag-disable=10441 -diag-disable=10121" >> ${BINPATH}/icc.cfg
-        (grep 'diag-disable=10441' ${BINPATH}/icpc.cfg &> /dev/null) || echo "-diag-disable=10441 -diag-disable=10121" >> ${BINPATH}/icpc.cfg
+        (grep 'diag-disable=10441' ${BINPATH}/icc.cfg &> /dev/null) || \
+            echo "-diag-disable=10441 -diag-disable=10121 -gcc-name=${GCC_PREFIX}/bin/gcc -gxx-name=${GCC_PREFIX}/bin/g++ -Wl,-rpath,${GCC_PREFIX}/lib" \
+            >> ${BINPATH}/icc.cfg
+        (grep 'diag-disable=10441' ${BINPATH}/icpc.cfg &> /dev/null) || \
+            echo "-diag-disable=10441 -diag-disable=10121 -gcc-name=${GCC_PREFIX}/bin/gcc -gxx-name=${GCC_PREFIX}/bin/g++ -Wl,-rpath,${GCC_PREFIX}/lib" \
+            >> ${BINPATH}/icpc.cfg
     )
 else
     echo "## -- Skip CC toolkit"
@@ -375,7 +367,9 @@ if [ ! -x ${BINPATH}/ifort ]; then
             --eula accept \
             --install-dir ${ONEAPI_PREFIX} \
              --ignore-errors
-        (grep 'diag-disable=10441' ${BINPATH}/ifort.cfg &> /dev/null) || echo "-diag-disable=10441 -diag-disable=10121" >> ${BINPATH}/ifort.cfg
+        (grep 'diag-disable=10441' ${BINPATH}/ifort.cfg &> /dev/null) || \
+            echo "-diag-disable=10441 -diag-disable=10121 -gcc-name=${GCC_PREFIX}/bin/gcc -gxx-name=${GCC_PREFIX}/bin/g++ -Wl,-rpath,${GCC_PREFIX}/lib" \
+            >> ${BINPATH}/ifort.cfg
     )
 else
     echo "## -- Skip FC toolkit"
