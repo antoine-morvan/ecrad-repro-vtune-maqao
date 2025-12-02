@@ -18,7 +18,7 @@ Results are stored under `rundir/ecrad_log.$(date)/`
 
 :warning:
 
-* Requires ~40GB of space
+* Requires ~60GB of disk space
 * Default settings runs the small case of ecRad 
 * Medium test case requires ~2GB of RAM per thread
 * Edit `TMP_DIR=${SCRIPT_DIR}/.tmp` to something that suits your machine
