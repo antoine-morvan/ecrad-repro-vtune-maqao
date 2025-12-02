@@ -98,7 +98,7 @@ GNU_MIRROR=https://mirror.cyberbits.eu/gnu
 
 GMP_URL=${GNU_MIRROR}/gmp/gmp-6.3.0.tar.xz
 MPC_URL=${GNU_MIRROR}/mpc/mpc-1.3.1.tar.gz
-MPFR_URL=${GNU_MIRROR}/mpfr/4.2.1.tar.xz
+MPFR_URL=${GNU_MIRROR}/mpfr/mpfr-4.2.1.tar.xz
 GCC_URL=${GNU_MIRROR}/gcc/gcc-12.5.0/gcc-12.5.0.tar.gz
 
 GMP_CHECKSUM="a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
@@ -106,7 +106,8 @@ MPFR_CHECKSUM="277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2"
 MPC_CHECKSUM="ab642492f5cf882b74aa0cb730cd410a81edcdbec895183ce930e706c1c759b8"
 GCC_CHECKSUM="f2dfac9c026c58b04251732aa459db614ae1017d32a18a296b1ae5af3dcad927"
 
-if [ $(gcc -dumpfullversion -dumpversion | cut -d'.' -f1) -gt 12 ]; then
+# if [ $(gcc -dumpfullversion -dumpversion | cut -d'.' -f1) -gt 12 ]; then
+if true; then
 
 [ ! -f ${CACHE_DIR}/$(basename ${GMP_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${GMP_URL}) -C - ${GMP_URL}
 [ ! -f ${CACHE_DIR}/$(basename ${MPC_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MPC_URL}) -C - ${MPC_URL}
