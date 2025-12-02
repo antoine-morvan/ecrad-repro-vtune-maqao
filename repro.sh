@@ -20,6 +20,8 @@ CACHE_DIR=${SCRIPT_DIR}/.cache
 ONEAPI_PREFIX=${SCRIPT_DIR}/oneapi
 mkdir -p ${TMP_DIR} ${CACHE_DIR}
 
+GNU_MIRROR=https://mirror.cyberbits.eu/gnu
+
 ##########################################################################################
 ## Setup Recent CMake
 ##########################################################################################
@@ -65,7 +67,7 @@ if [ ! -f ${HWLOC_PREFIX}/bin/hwloc-calc ]; then
         rm -rf ${TMP_HWLOC}
     }
     trap -- cleanup TERM INT QUIT EXIT HUP
-    [ ! -d ${TMP_HWLOC}/$(basename ${HWLOC_URL} .tar.gz) ] && tar xf ${CACHE_DIR}/$(basename ${HWLOC_URL}) -C ${TMP_HWLOC}
+    [ ! -d ${TMP_HWLOC}/$(basename ${HWLOC_URL} .tar.bz2) ] && tar xf ${CACHE_DIR}/$(basename ${HWLOC_URL}) -C ${TMP_HWLOC}
     cd ${TMP_HWLOC}/$(basename ${HWLOC_URL} .tar.bz2)
     [ ! -f Makefile ] && ./configure \
             --prefix=${HWLOC_PREFIX} \
@@ -90,11 +92,65 @@ fi
 export PATH=${HWLOC_PREFIX}/bin:${PATH}
 
 ##########################################################################################
+## Setup recent AutoTools for CDO
+##########################################################################################
+AUTOTOOLS_PREFIX=${SCRIPT_DIR}/autotools
+
+AUTOCONF_URL=${GNU_MIRROR}/autoconf/autoconf-2.71.tar.xz
+AUTOMAKE_URL=${GNU_MIRROR}/automake/automake-1.16.5.tar.xz
+
+AUTOCONF_CHECKSUM="f14c83cfebcc9427f2c3cea7258bd90df972d92eb26752da4ddad81c87a0faa4"
+AUTOMAKE_CHECKSUM="f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469"
+
+[ ! -f ${CACHE_DIR}/$(basename ${AUTOCONF_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${AUTOCONF_URL}) -C - ${AUTOCONF_URL}
+[ ! -f ${CACHE_DIR}/$(basename ${AUTOMAKE_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${AUTOMAKE_URL}) -C - ${AUTOMAKE_URL}
+
+if [ ! -f ${AUTOTOOLS_PREFIX}/bin/autoconf ]; then
+(
+    echo "${AUTOCONF_CHECKSUM} ${CACHE_DIR}/$(basename ${AUTOCONF_URL})" | sha256sum -c
+    export TMP_AUTOCONF=${TMP_DIR}/autoconf
+    mkdir -p $TMP_AUTOCONF
+    cleanup() {
+        rm -rf ${TMP_AUTOCONF}
+    }
+    trap -- cleanup TERM INT QUIT EXIT HUP
+    [ ! -d ${TMP_AUTOCONF}/$(basename ${AUTOCONF_URL} .tar.xz) ] && tar xf ${CACHE_DIR}/$(basename ${AUTOCONF_URL}) -C ${TMP_AUTOCONF}
+    cd ${TMP_AUTOCONF}/$(basename ${AUTOCONF_URL} .tar.xz)
+    [ ! -f Makefile ] && ./configure \
+            --prefix=${AUTOTOOLS_PREFIX}
+    make -j 8
+    make install
+)
+else
+    echo "## -- Skip AutoConf"
+fi
+
+if [ ! -f ${AUTOTOOLS_PREFIX}/bin/automake ]; then
+(
+    echo "${AUTOMAKE_CHECKSUM} ${CACHE_DIR}/$(basename ${AUTOMAKE_URL})" | sha256sum -c
+    export TMP_AUTOMAKE=${TMP_DIR}/autoconf
+    mkdir -p $TMP_AUTOMAKE
+    cleanup() {
+        rm -rf ${TMP_AUTOMAKE}
+    }
+    trap -- cleanup TERM INT QUIT EXIT HUP
+    [ ! -d ${TMP_AUTOMAKE}/$(basename ${AUTOMAKE_URL} .tar.xz) ] && tar xf ${CACHE_DIR}/$(basename ${AUTOMAKE_URL}) -C ${TMP_AUTOMAKE}
+    cd ${TMP_AUTOMAKE}/$(basename ${AUTOMAKE_URL} .tar.xz)
+    [ ! -f Makefile ] && ./configure \
+            --prefix=${AUTOTOOLS_PREFIX}
+    make -j 8
+    make install
+)
+else
+    echo "## -- Skip AutoMake"
+fi
+
+export PATH=${AUTOTOOLS_PREFIX}/bin:${PATH}
+
+##########################################################################################
 ## Setup GCC 12.5.0 in case system GCC is too recen
 ##########################################################################################
 GCC_PREFIX=${SCRIPT_DIR}/gcc-12.5.0
-
-GNU_MIRROR=https://mirror.cyberbits.eu/gnu
 
 GMP_URL=${GNU_MIRROR}/gmp/gmp-6.3.0.tar.xz
 MPC_URL=${GNU_MIRROR}/mpc/mpc-1.3.1.tar.gz

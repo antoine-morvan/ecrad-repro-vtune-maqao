@@ -6,3 +6,4 @@ rundir/
 hpcw/
 hwloc/
 gcc-*/
+autotools/

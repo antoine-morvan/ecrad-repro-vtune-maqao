@@ -5,6 +5,8 @@ Script to install toolchain & run ecRad using HPCW. It installs:
 | Tool | Version | Usage |
 |------|---------|-------|
 | CMake | 4.2.0 | recent vesion to run HPCW |
+| AutoConf | 2.71 | needed by Cdo |
+| AutoMake | 1.16.5 | needed by Cdo |
 | hwloc | 2.12.2 | For binding |
 | OneAPI | 2023.2.4 | Latest version that ships icc/icpc |
 | GCC | 12.5.0 | more recent versions make OneAPI 2023.2.4 fail |
