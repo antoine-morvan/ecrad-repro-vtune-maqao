@@ -9,6 +9,13 @@ echo "## -- Settings"
 HPCW_COMMIT=1532c5bb0043e9d69123c930e82d0152ceaa8fae
 HPCW_REPO=https://gitlab.dkrz.de/hpcw/hpcw.git
 
+# enable only one
+export ENABLE_VTUNE=true
+# export ENABLE_MAQAO=true
+
+# chose small or medium (or big, but requires more RAM)
+ECRAD_TEST_SIZE=small
+
 ##########################################################################################
 ## Logic
 ##########################################################################################
@@ -508,20 +515,31 @@ HPCW_INSTALL_DIR=${RUN_DIR}/ecrad_install
 HPCW_LOG_DIR=${RUN_DIR}/ecrad_log.$(date +"%Y%m%dT%H%M%S")
 mkdir -p ${HPCW_BUILD_DIR} ${HPCW_LOG_DIR}
 
-export ENABLE_VTUNE=true
-export HPCW_VTUNE_COLLECT_MODE="hotspots"
+case ${ENABLE_VTUNE:-false} in
+    true)
+        export ENABLE_VTUNE
+        export ENABLE_MAQAO=false
+        export HPCW_VTUNE_COLLECT_MODE="hotspots"
+        HPCW_EXTRA_ARGS=''
+        ;;
+esac
 
-# export ENABLE_MAQAO=true
+case ${ENABLE_MAQAO:-false} in
+    true)
+        export ENABLE_MAQAO
+        export ENABLE_VTUNE=false
+        HPCW_EXTRA_ARGS='--cmake-flags="-DUSE_SYSTEM_maqao=ON"'
+        ;;
+esac
 
 ${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh ${HPCW_SOURCE_DIR} \
     interactive/intel-custom.env.sh \
     --build-dir=${HPCW_BUILD_DIR} \
     --install-dir=${HPCW_INSTALL_DIR} \
     --log-dir=${HPCW_LOG_DIR} \
-    --with=ecrad --reconfigure --rebuild \
-    --test --ctest-flags="-R ecrad-small"
-
-    # --cmake-flags="-DUSE_SYSTEM_maqao=ON"
+    --with=ecrad --reconfigure \
+    --test --ctest-flags="-R ecrad-${ECRAD_TEST_SIZE:-small}" \
+    ${HPCW_EXTRA_ARGS:-}
 
 ##########################################################################################
 ## Exit
