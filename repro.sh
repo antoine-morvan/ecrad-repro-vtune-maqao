@@ -511,12 +511,17 @@ mkdir -p ${HPCW_BUILD_DIR} ${HPCW_LOG_DIR}
 export ENABLE_VTUNE=true
 export HPCW_VTUNE_COLLECT_MODE="hotspots"
 
-${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh ${HPCW_SOURCE_DIR} interactive/intel-custom.env.sh \
+# export ENABLE_MAQAO=true
+
+${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh ${HPCW_SOURCE_DIR} \
+    interactive/intel-custom.env.sh \
     --build-dir=${HPCW_BUILD_DIR} \
     --install-dir=${HPCW_INSTALL_DIR} \
     --log-dir=${HPCW_LOG_DIR} \
     --with=ecrad --reconfigure --rebuild \
     --test --ctest-flags="-R ecrad-small"
+
+    # --cmake-flags="-DUSE_SYSTEM_maqao=ON"
 
 ##########################################################################################
 ## Exit
