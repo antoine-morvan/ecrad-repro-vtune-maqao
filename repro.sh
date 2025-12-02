@@ -69,7 +69,7 @@ ONEAPI_CC_FOLDER=$(basename ${ONEAPI_CC_URL} .sh)
 ONEAPI_FC_FOLDER=$(basename ${ONEAPI_FC_URL} .sh)
 
 BINPATH=${ONEAPI_PREFIX}/compiler/${ONEAPI_VERSION}/linux/bin
-if [ ! -x ${BINPATH}/icx ]; then
+if [ ! -x ${BINPATH}/icc ]; then
     (
         echo "${ONEAPI_CC_CHECKSUM} ${CACHE_DIR}/$(basename ${ONEAPI_CC_URL})" | sha256sum -c
         # Use temporary home folder to prevent intel package installer from poluting
@@ -90,11 +90,20 @@ if [ ! -x ${BINPATH}/icx ]; then
             --eula accept \
             --install-dir ${ONEAPI_PREFIX} \
              --ignore-errors
+    # see https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-10/gcc-name.html
+    # see https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-10/gxx-name.html
+# specify gcc 12.5.0 or lower
+# -gcc-name=${BASE_GCC_LOCATION}/prefix/bin/gcc
+# -gxx-name=${BASE_GCC_LOCATION}/prefix/bin/g++
+# -Wl,-rpath,${BASE_GCC_LOCATION}/prefix/lib
+
+        (grep 'diag-disable=10441' ${BINPATH}/icc.cfg &> /dev/null) || echo "-diag-disable=10441 -diag-disable=10121" >> ${BINPATH}/icc.cfg
+        (grep 'diag-disable=10441' ${BINPATH}/icpc.cfg &> /dev/null) || echo "-diag-disable=10441 -diag-disable=10121" >> ${BINPATH}/icpc.cfg
     )
 else
     echo "## -- Skip CC toolkit"
 fi
-if [ ! -x ${BINPATH}/ifx ]; then
+if [ ! -x ${BINPATH}/ifort ]; then
     (
         echo "${ONEAPI_FC_CHECKSUM} ${CACHE_DIR}/$(basename ${ONEAPI_FC_URL})" | sha256sum -c
         # Use temporary home folder to prevent intel package installer from poluting
@@ -114,6 +123,7 @@ if [ ! -x ${BINPATH}/ifx ]; then
             --eula accept \
             --install-dir ${ONEAPI_PREFIX} \
              --ignore-errors
+        (grep 'diag-disable=10441' ${BINPATH}/ifort.cfg &> /dev/null) || echo "-diag-disable=10441 -diag-disable=10121" >> ${BINPATH}/ifort.cfg
     )
 else
     echo "## -- Skip FC toolkit"
@@ -150,6 +160,8 @@ export HPCW_SOURCE_DIR=${SCRIPT_DIR}/hpcw
 
 if [ ! -d ${HPCW_SOURCE_DIR} ]; then
     git clone https://gitlab.dkrz.de/hpcw/hpcw.git ${HPCW_SOURCE_DIR}
+    mkdir -p ${CACHE_DIR}/hpcw-store
+    ln -s ${CACHE_DIR}/hpcw-store ${HPCW_SOURCE_DIR}
 else
     echo "## -- skip HPCW clone"
 fi
@@ -190,6 +202,7 @@ EOF
 
 RUN_DIR=${SCRIPT_DIR}/rundir
 HPCW_BUILD_DIR=${RUN_DIR}/ecrad_build
+HPCW_INSTALL_DIR=${RUN_DIR}/ecrad_install
 HPCW_LOG_DIR=${RUN_DIR}/ecrad_log.$(date +"%Y%m%dT%H%M%S")
 mkdir -p ${HPCW_BUILD_DIR} ${HPCW_LOG_DIR}
 
@@ -198,6 +211,7 @@ mkdir -p ${HPCW_BUILD_DIR} ${HPCW_LOG_DIR}
 
 ${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh ${HPCW_SOURCE_DIR} interactive/intel-custom.env.sh \
     --build-dir=${HPCW_BUILD_DIR} \
+    --install-dir=${HPCW_INSTALL_DIR} \
     --log-dir=${HPCW_LOG_DIR} \
     --with=ecrad --reconfigure --rebuild \
     --test --ctest-flags="-R ecrad-small"
