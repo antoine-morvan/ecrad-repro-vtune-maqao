@@ -113,10 +113,6 @@ if [ $(gcc -dumpfullversion -dumpversion | cut -d'.' -f1) -gt 12 ]; then
 [ ! -f ${CACHE_DIR}/$(basename ${MPFR_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MPFR_URL}) -C - ${MPFR_URL}
 [ ! -f ${CACHE_DIR}/$(basename ${GCC_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${GCC_URL}) -C - ${GCC_URL}
 
-VTUNE_FOLDER=$(basename ${VTUNE_URL} .sh)
-ONEAPI_CC_FOLDER=$(basename ${ONEAPI_CC_URL} .sh)
-ONEAPI_FC_FOLDER=$(basename ${ONEAPI_FC_URL} .sh)
-
 GMP_FOLDER=$(basename ${GMP_URL} .tar.xz)
 MPC_FOLDER=$(basename ${MPC_URL} .tar.gz)
 MPFR_FOLDER=$(basename ${MPFR_URL} .tar.xz)
