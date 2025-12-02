@@ -17,3 +17,8 @@ This also checks HPCW out (to the proper version).
 * Requires ~40GB of space
 * Default settings runs the small case of ecRad 
 * Medium test case requires ~60GB of RAM
+* Edit `TMP_DIR=${SCRIPT_DIR}/.tmp` to something that suits your machine
+
+## Offline
+
+Everything needed is put under ` .cache` ; you can run the script on a machine with internet, then move the cache folder arround.
