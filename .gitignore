@@ -5,3 +5,4 @@ oneapi/
 rundir/
 hpcw/
 hwloc/
+gcc-*/
