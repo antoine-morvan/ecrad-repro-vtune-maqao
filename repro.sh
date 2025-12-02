@@ -35,7 +35,7 @@ if [ ! -x ${CMAKE_PREFIX}/bin/cmake ]; then
         export TMP_CMAKE=${TMP_DIR}/cmake
         mkdir -p $TMP_CMAKE
         cleanup() {
-            rm -rfv ${TMP_CMAKE}
+            rm -rf ${TMP_CMAKE}
         }
         trap -- cleanup TERM INT QUIT EXIT HUP
         [ ! -d ${TMP_CMAKE}/$(basename ${CMAKE_URL} .tar.gz) ] && tar xf ${CACHE_DIR}/$(basename ${CMAKE_URL}) -C ${TMP_CMAKE}
@@ -46,6 +46,48 @@ else
     echo "## -- Skip CMake"
 fi
 export PATH=${CMAKE_PREFIX}/bin:${PATH}
+
+##########################################################################################
+## Setup HWLOC for binding
+##########################################################################################
+HWLOC_PREFIX=${SCRIPT_DIR}/hwloc
+
+HWLOC_URL=https://download.open-mpi.org/release/hwloc/v2.12/hwloc-2.12.2.tar.bz2
+HWLOC_CHECKSUM=563e61d70febb514138af0fac36b97621e01a4aacbca07b86e7bd95b85055ba0
+
+[ ! -f ${CACHE_DIR}/$(basename ${HWLOC_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${HWLOC_URL}) -C - ${HWLOC_URL}
+if [ ! -f ${HWLOC_PREFIX}/bin/hwloc-calc ]; then
+(
+    echo "${HWLOC_CHECKSUM} ${CACHE_DIR}/$(basename ${HWLOC_URL})" | sha256sum -c
+    export TMP_HWLOC=${TMP_DIR}/hwloc
+    mkdir -p $TMP_HWLOC
+    cleanup() {
+        rm -rf ${TMP_HWLOC}
+    }
+    trap -- cleanup TERM INT QUIT EXIT HUP
+    [ ! -d ${TMP_HWLOC}/$(basename ${HWLOC_URL} .tar.gz) ] && tar xf ${CACHE_DIR}/$(basename ${HWLOC_URL}) -C ${TMP_HWLOC}
+    cd ${TMP_HWLOC}/$(basename ${HWLOC_URL} .tar.bz2)
+    [ ! -f Makefile ] && ./configure \
+            --prefix=${HWLOC_PREFIX} \
+            --enable-static \
+            --disable-shared \
+            --disable-cairo \
+            --disable-cpuid \
+            --disable-libxml2 \
+            --disable-opencl \
+            --disable-cuda \
+            --disable-nvml \
+            --disable-rsmi \
+            --disable-levelzero \
+            --disable-gl \
+            --disable-pci
+    make -j 8
+    make install
+)
+else
+    echo "## -- Skip HWloc"
+fi
+export PATH=${HWLOC_PREFIX}/bin:${PATH}
 
 ##########################################################################################
 ## Setup OneAPI & VTune

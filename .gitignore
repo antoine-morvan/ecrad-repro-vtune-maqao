@@ -4,3 +4,4 @@ oneapi/
 .tmp/
 rundir/
 hpcw/
+hwloc/
