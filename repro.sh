@@ -508,8 +508,8 @@ HPCW_INSTALL_DIR=${RUN_DIR}/ecrad_install
 HPCW_LOG_DIR=${RUN_DIR}/ecrad_log.$(date +"%Y%m%dT%H%M%S")
 mkdir -p ${HPCW_BUILD_DIR} ${HPCW_LOG_DIR}
 
-# export ENABLE_VTUNE=true
-# export HPCW_VTUNE_COLLECT_MODE="hotspots"
+export ENABLE_VTUNE=true
+export HPCW_VTUNE_COLLECT_MODE="hotspots"
 
 ${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh ${HPCW_SOURCE_DIR} interactive/intel-custom.env.sh \
     --build-dir=${HPCW_BUILD_DIR} \
