@@ -90,6 +90,219 @@ fi
 export PATH=${HWLOC_PREFIX}/bin:${PATH}
 
 ##########################################################################################
+## Setup GCC 12.5.0 in case system GCC is too recen
+##########################################################################################
+GCC_PREFIX=${SCRIPT_DIR}/gcc-12.5.0
+
+GNU_MIRROR=https://mirror.cyberbits.eu/gnu
+
+GMP_URL=${GNU_MIRROR}/gmp/gmp-6.3.0.tar.xz
+MPC_URL=${GNU_MIRROR}/mpc/mpc-1.3.1.tar.gz
+MPFR_URL=${GNU_MIRROR}/mpfr/4.2.1.tar.xz
+GCC_URL=${GNU_MIRROR}/gcc/gcc-12.5.0/gcc-12.5.0.tar.gz
+
+GMP_CHECKSUM="a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
+MPFR_CHECKSUM="277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2"
+MPC_CHECKSUM="ab642492f5cf882b74aa0cb730cd410a81edcdbec895183ce930e706c1c759b8"
+GCC_CHECKSUM="f2dfac9c026c58b04251732aa459db614ae1017d32a18a296b1ae5af3dcad927"
+
+if [ $(gcc -dumpfullversion -dumpversion | cut -d'.' -f1) -gt 12 ]; then
+
+[ ! -f ${CACHE_DIR}/$(basename ${GMP_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${GMP_URL}) -C - ${GMP_URL}
+[ ! -f ${CACHE_DIR}/$(basename ${MPC_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MPC_URL}) -C - ${MPC_URL}
+[ ! -f ${CACHE_DIR}/$(basename ${MPFR_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${MPFR_URL}) -C - ${MPFR_URL}
+[ ! -f ${CACHE_DIR}/$(basename ${GCC_URL}) ] && curl -L -o ${CACHE_DIR}/$(basename ${GCC_URL}) -C - ${GCC_URL}
+
+VTUNE_FOLDER=$(basename ${VTUNE_URL} .sh)
+ONEAPI_CC_FOLDER=$(basename ${ONEAPI_CC_URL} .sh)
+ONEAPI_FC_FOLDER=$(basename ${ONEAPI_FC_URL} .sh)
+
+GMP_FOLDER=$(basename ${GMP_URL} .tar.xz)
+MPC_FOLDER=$(basename ${MPC_URL} .tar.gz)
+MPFR_FOLDER=$(basename ${MPFR_URL} .tar.xz)
+GCC_FOLDER=$(basename ${GCC_URL} .tar.gz)
+
+_SETUP_LIB_FOLDER=lib
+TARGET="$(LANG=C ${CC:-gcc} -v |& grep Target | cut -d' ' -f2)"
+mkdir -p ${GCC_PREFIX}/${_SETUP_LIB_FOLDER}
+case ${_SETUP_LIB_FOLDER} in
+    lib)   [ ! -d ${GCC_PREFIX}/lib64 ] && (cd ${GCC_PREFIX} && ln -s ${_SETUP_LIB_FOLDER} lib64) ;;
+    lib64) [ ! -d ${GCC_PREFIX}/lib   ] && (cd ${GCC_PREFIX} && ln -s ${_SETUP_LIB_FOLDER} lib)   ;;
+    *)     exit 1 ;;
+esac
+
+set +e
+CURRENT_SETUP_LIBDIR="${GCC_PREFIX}/${_SETUP_LIB_FOLDER} "
+SYSTEM_SEARCH_PATHS=$(gcc -Xlinker --verbose  2>/dev/null | grep SEARCH | sed 's/SEARCH_DIR("=\?\([^"]\+\)"); */\1\n/g'  | grep -vE '^$')
+RUNTIME_LIBRARIES="asan atomic gcc_s gfortran gomp hwasan itm lsan quadmath ssp stdc++ tsan ubsan m pthread dl"
+SYTEM_RUNTIME_LIB_DIR=$(for lib in $RUNTIME_LIBRARIES; do
+    dirname $(readlink -f $(${CC:-cc} -print-file-name=lib${lib}.so)) 2> /dev/null
+    dirname $(readlink -f $(${CC:-cc} -print-file-name=lib${lib}.a)) 2> /dev/null
+done | grep -v $(pwd) | uniq | sort)
+RPATH_SPECS="$CURRENT_SETUP_LIBDIR "
+for libdir in $SYTEM_RUNTIME_LIB_DIR $SYSTEM_SEARCH_PATHS;  do
+    if ! [[ "${RPATH_SPECS}" =~ " ${libdir} " ]]; then
+        RPATH_SPECS+=" ${libdir} "
+    fi
+done
+RPATH_SPECS=$(echo "$RPATH_SPECS" | sed -r 's/[ ]+$//g' | sed -r 's/[ ]+/:/g')
+if [ "${LIBRARY_PATH:-}" == "" ]; then
+    unset LIBRARY_PATH
+fi
+set -e
+
+export TMP_GCC=${TMP_DIR}/gcc
+mkdir -p $TMP_GCC
+cleanup() {
+    rm -rf ${TMP_GCC}
+}
+trap -- cleanup TERM INT QUIT EXIT HUP
+
+if [ ! -f ${GCC_PREFIX}/${_SETUP_LIB_FOLDER}/libgmp.so ]; then
+(
+    echo "${GMP_CHECKSUM} ${CACHE_DIR}/$(basename ${GMP_URL})" | sha256sum -c
+    [ ! -d ${TMP_GCC}/$(basename ${GMP_URL} .tar.xz) ] && tar xf ${CACHE_DIR}/$(basename ${GMP_URL}) -C ${TMP_GCC}
+    cd ${TMP_GCC}/${GMP_FOLDER}
+    if [ $(gcc -dumpfullversion -dumpversion | cut -d'.' -f1) -ge 15 ] ; then
+        export CFLAGS="${CFLAGS:-} -Wno-implicit-function-declaration -std=gnu17"
+    fi
+    [ ! -f Makefile ] && \
+        ./configure \
+            --target=${TARGET} \
+            --build=${TARGET} \
+            --host=${TARGET} \
+            --libdir=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --prefix=${GCC_PREFIX}
+    make -j 8
+    make install
+)
+else
+    echo "## -- Skip GMP"
+fi
+
+if [ ! -f ${GCC_PREFIX}/${_SETUP_LIB_FOLDER}/libmpfr.so ]; then
+(
+    echo "${MPFR_CHECKSUM} ${CACHE_DIR}/$(basename ${MPFR_URL})" | sha256sum -c
+    [ ! -d ${TMP_GCC}/$(basename ${MPFR_URL} .tar.xz) ] && tar xf ${CACHE_DIR}/$(basename ${MPFR_URL}) -C ${TMP_GCC}
+    cd ${TMP_GCC}/${MPFR_FOLDER}
+    [ ! -f Makefile ] && \
+        ./configure \
+            --target=${TARGET} \
+            --build=${TARGET} \
+            --host=${TARGET} \
+            --with-gmp-include=${GCC_PREFIX}/include \
+            --with-gmp-lib=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --libdir=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --prefix=${GCC_PREFIX}
+    make -j 8
+    make install
+)
+else
+    echo "## -- Skip MPFR"
+fi
+
+if [ ! -f ${GCC_PREFIX}/${_SETUP_LIB_FOLDER}/libmpc.so ]; then
+(
+    echo "${MPC_CHECKSUM} ${CACHE_DIR}/$(basename ${MPC_URL})" | sha256sum -c
+    [ ! -d ${TMP_GCC}/$(basename ${MPC_URL} .tar.gz) ] && tar xf ${CACHE_DIR}/$(basename ${MPC_URL}) -C ${TMP_GCC}
+    cd ${TMP_GCC}/${MPC_FOLDER}
+    [ ! -f Makefile ] && \
+        ./configure \
+            --target=${TARGET} \
+            --build=${TARGET} \
+            --host=${TARGET} \
+            --with-gmp-include=${GCC_PREFIX}/include \
+            --with-gmp-lib=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --with-mpfr-include=${GCC_PREFIX}/include \
+            --with-mpfr-lib=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --libdir=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --prefix=${GCC_PREFIX}
+    make -j 8
+    make install
+)
+else
+    echo  "## -- Skip MPC"
+fi
+
+if [ ! -f ${GCC_PREFIX}/bin/gcc ]; then
+(
+    echo "${GCC_CHECKSUM} ${CACHE_DIR}/$(basename ${GCC_URL})" | sha256sum -c
+    [ ! -d ${TMP_GCC}/$(basename ${GCC_URL} .tar.gz) ] && tar xf ${CACHE_DIR}/$(basename ${GCC_URL}) -C ${TMP_GCC}
+
+    # # need to export this otherwise some steps fail at finding ISL ... (if not already !)
+    # if ! [[ "${LDFLAGS:-}" =~ "-Wl,-rpath,${GCC_PREFIX}/${_SETUP_LIB_FOLDER}/" ]]; then
+    #     LDFLAGS="${LDFLAGS:-} -Wl,-rpath,${GCC_PREFIX}/${_SETUP_LIB_FOLDER}/"
+    # fi
+    # export LDFLAGS
+
+    export CXXFLAGS="${CXXFLAGS:-} -fpermissive"
+    GCC_BUILD_DIR=${TMP_GCC}/gcc_build
+    mkdir -p ${GCC_BUILD_DIR}
+    cd ${GCC_BUILD_DIR}
+    [ ! -f /Makefile ] && \
+        ${TMP_GCC}/${GCC_FOLDER}/configure \
+            --target=${TARGET} \
+            --build=${TARGET} \
+            --host=${TARGET} \
+            --disable-multilib \
+            --disable-nls \
+            --disable-canonical-system-headers \
+            --with-system-zlib \
+            --enable-bootstrap \
+            --disable-libssp \
+            --enable-checking=release \
+            --enable-default-pie \
+            --enable-default-ssp \
+            --disable-install-libiberty \
+            --with-stage1-ldflags="${LDFLAGS:-}" \
+            --with-boot-ldflags="${LDFLAGS:-} -static-libstdc++ -static-libgcc" \
+            --enable-lto \
+            --with-gnu-ld \
+            --with-gnu-as \
+            --with-gmp-include=${GCC_PREFIX}/include \
+            --with-gmp-lib=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --with-mpfr-include=${GCC_PREFIX}/include \
+            --with-mpfr-lib=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --with-mpc-include=${GCC_PREFIX}/include \
+            --with-mpc-lib=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --without-zstd \
+            --disable-libjava \
+            --enable-host-shared \
+            --enable-versioned-jit \
+            --enable-languages=c,c++,fortran,go,jit,lto,objc,obj-c++ \
+            --disable-libsanitizer \
+            --libdir=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
+            --prefix=${GCC_PREFIX}
+    make -j $(nproc) MAKEINFO=true
+    make install MAKEINFO=true
+    # create cc & f95 links
+    (
+        cd ${GCC_PREFIX}/bin
+        [ ! -f cc  ] && ln -s gcc cc
+        [ ! -f f95 ] && ln -s gfortran f95
+    )
+)
+else
+    echo "## -- Skip GCC"
+fi
+
+SPECSFILE_PATH=${GCC_PREFIX}/${_SETUP_LIB_FOLDER}/gcc/${TARGET}/12.5.0/specs
+# note: we strip the last (empty) line, otherwise this causes char reading error ...
+mkdir -p $(dirname ${SPECSFILE_PATH})
+gcc -dumpspecs | sed '$d' > ${SPECSFILE_PATH}
+cat >> $SPECSFILE_PATH << EOF
+
+*link_libgcc:
++ -rpath ${GCC_PREFIX}/${_SETUP_LIB_FOLDER}
+
+*self_spec:
++ -B${GCC_PREFIX}/bin
+
+EOF
+
+fi
+
+##########################################################################################
 ## Setup OneAPI & VTune
 ##########################################################################################
 
