@@ -323,7 +323,7 @@ VTUNE_FOLDER=$(basename ${VTUNE_URL} .sh)
 ONEAPI_CC_FOLDER=$(basename ${ONEAPI_CC_URL} .sh)
 ONEAPI_FC_FOLDER=$(basename ${ONEAPI_FC_URL} .sh)
 
-BINPATH=${ONEAPI_PREFIX}/compiler/${ONEAPI_VERSION}/linux/bin
+BINPATH=${ONEAPI_PREFIX}/compiler/${ONEAPI_VERSION}/linux/bin/intel64
 if [ ! -x ${BINPATH}/icc ]; then
     (
         echo "${ONEAPI_CC_CHECKSUM} ${CACHE_DIR}/$(basename ${ONEAPI_CC_URL})" | sha256sum -c
