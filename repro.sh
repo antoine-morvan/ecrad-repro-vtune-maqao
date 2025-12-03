@@ -6,7 +6,7 @@ set -eu -o pipefail
 ##########################################################################################
 echo "## -- Settings"
 
-HPCW_COMMIT=1532c5bb0043e9d69123c930e82d0152ceaa8fae
+HPCW_COMMIT=27e29f31fd65f64d33806829af365e273d1d924e
 HPCW_REPO=https://gitlab.dkrz.de/hpcw/hpcw.git
 
 # enable only one
@@ -500,7 +500,8 @@ if [ ! -d ${HPCW_SOURCE_DIR} ]; then
     mkdir -p ${CACHE_DIR}/hpcw-store
     ln -s ${CACHE_DIR}/hpcw-store ${HPCW_SOURCE_DIR}
 else
-    echo "## -- skip HPCW clone"
+    echo "## -- Fetch HPCW updates"
+    (cd ${HPCW_SOURCE_DIR} ; git fetch &> /dev/null) || true
 fi
 (
     cd ${HPCW_SOURCE_DIR}
