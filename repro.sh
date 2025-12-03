@@ -10,8 +10,8 @@ HPCW_COMMIT=1532c5bb0043e9d69123c930e82d0152ceaa8fae
 HPCW_REPO=https://gitlab.dkrz.de/hpcw/hpcw.git
 
 # enable only one
-export ENABLE_VTUNE=true
-# export ENABLE_MAQAO=true
+# export ENABLE_VTUNE=true
+export ENABLE_MAQAO=true
 
 # chose small or medium (or big, but requires more RAM)
 ECRAD_TEST_SIZE=small
@@ -354,7 +354,7 @@ if [ ! -f ${GCC_PREFIX}/bin/gcc ]; then
             --disable-libjava \
             --enable-host-shared \
             --enable-versioned-jit \
-            --enable-languages=c,c++,fortran,go,jit,lto,objc,obj-c++ \
+            --enable-languages=c,c++,fortran \
             --disable-libsanitizer \
             --libdir=${GCC_PREFIX}/${_SETUP_LIB_FOLDER} \
             --prefix=${GCC_PREFIX}
