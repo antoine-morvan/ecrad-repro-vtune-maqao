@@ -6,12 +6,13 @@ set -eu -o pipefail
 ##########################################################################################
 echo "## -- Settings"
 
-HPCW_COMMIT=27e29f31fd65f64d33806829af365e273d1d924e
+HPCW_COMMIT=a28a967b39c3d66ee7baf2359efe2f0afb43dab0
 HPCW_REPO=https://gitlab.dkrz.de/hpcw/hpcw.git
 
 # enable only one
 # export ENABLE_VTUNE=true
-export ENABLE_MAQAO=true
+# export ENABLE_MAQAO=true
+# export ENABLE_PERFRECORD=true
 
 # chose small or medium (or big, but requires more RAM)
 ECRAD_TEST_SIZE=small
