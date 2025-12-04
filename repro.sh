@@ -562,12 +562,17 @@ case ${ENABLE_MAQAO:-false} in
         ;;
 esac
 
+# force rebuild ecRad ; work around https://gitlab.dkrz.de/hpcw/hpcw/-/issues/21
+rm -rf ${HPCW_BUILD_DIR}/ecrad-prefix
+rm -rf ${HPCW_BUILD_DIR}/ecrad-stamp/ecrad-done
+rm -rf ${HPCW_BUILD_DIR}/ecrad-stamp/ecrad-build
+
 ${HPCW_SOURCE_DIR}/toolchains/build-wrapper.sh ${HPCW_SOURCE_DIR} \
     interactive/intel-custom.env.sh \
     --build-dir=${HPCW_BUILD_DIR} \
     --install-dir=${HPCW_INSTALL_DIR} \
     --log-dir=${HPCW_LOG_DIR} \
-    --with=ecrad --reconfigure \
+    --with=ecrad --reconfigure --rebuild \
     --test --ctest-flags="-R ecrad-${ECRAD_TEST_SIZE:-small}" \
     ${HPCW_EXTRA_ARGS:-}
 
